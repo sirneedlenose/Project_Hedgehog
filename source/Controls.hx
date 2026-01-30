@@ -1,8 +1,11 @@
+import flixel.input.keyboard.FlxKeyList;
+import flixel.input.keyboard.FlxKeyboard;
 import flixel.input.keyboard.FlxKey;
 import flixel.FlxG;
 
 class Controls
 {
+    //public static inline var KeyBoard:FlxKeyboard;
     public static inline var left:FlxKey = FlxKey.LEFT;
     public static inline var right:FlxKey = FlxKey.RIGHT;
     public static inline var down:FlxKey = FlxKey.DOWN;

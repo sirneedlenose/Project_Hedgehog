@@ -1,0 +1,2 @@
+HaxeFlixel does not not support infinite tilemaps
+Use a finite tilemap size instead.

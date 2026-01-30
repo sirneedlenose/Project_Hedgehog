@@ -1,5 +1,7 @@
 package;
 
+import flixel.FlxCamera;
+import flixel.addons.editors.tiled.TiledObjectLayer;
 import flixel.text.FlxText;
 import flixel.FlxG;
 import flixel.FlxState;
@@ -8,19 +10,31 @@ import flixel.FlxSprite;
 
 class PlayState extends FlxState
 {
+	private var cameraTarget:FlxSprite;
+	private var debugCamera:FlxCamera;
 	private var sonic:Sonic;
 	private var debugDisplay:DebugDisplay;
+	private var act:Act;
 
 	private var playerState:String;
 
 	public override function create():Void
 	{
-		sonic = new Sonic(100, 100);
-		sonic.screenCenter();
-		add(sonic);
+		
+		bgColor = FlxColor.GRAY;
+
+		cameraTarget = new FlxSprite(0, 0);
+		cameraTarget.makeGraphic(1,1,FlxColor.TRANSPARENT);
+
+		FlxG.camera.follow(cameraTarget);
 
 		debugDisplay = new DebugDisplay();
-		add(debugDisplay);
+		//add(debugDisplay);
+
+		act = new Act("assets/data/testTileMap.tmx", this); // Pass the PlayState reference here
+		add(act.objectLayer);
+		add(act.tileLayer);
+		add(sonic);
 	}
 
 	public override function update(elapsed:Float):Void
@@ -29,19 +43,39 @@ class PlayState extends FlxState
 
 		if(Controls.TAB)
 		{
-			displayDebugInfo();
+			//displayDebugInfo();
 		}
 
-		// Update debug display with Sonic's current state
-		// Update only if the state has changed
-		if(sonic.playerStateToString() != playerState || playerState == null){
-			playerState = sonic.playerStateToString();
-			debugDisplay.updatePlayerState(playerState);
+		if(Controls.LEFT)
+		{
+			cameraTarget.x -= 20;
+
 		}
+
+		if(Controls.RIGHT)
+		{
+			cameraTarget.x += 20;
+
+		}
+
+		if(Controls.UP)
+		{
+			cameraTarget.y -= 20;
+
+		}
+		if(Controls.DOWN)
+		{
+			cameraTarget.y += 20;
+
+		}
+
+		FlxG.collide(sonic, act.tileLayer);
 	}
 
-	public function displayDebugInfo():Void
+
+	public function setPlayer(player:Sonic):Void
 	{
-		debugDisplay.visible = !debugDisplay.visible;
+		this.sonic = player;
+		
 	}
 }
