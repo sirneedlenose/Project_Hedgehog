@@ -1,0 +1,16 @@
+digraph graphname {
+n223321 [shape=box,label="(223321)"];
+n223320 [shape=box,label="(223320)"];
+n223319 [shape=box,label="(223319)"];
+n223318 [shape=box,label="(223318)\ntileSet = false"];
+n223317 [shape=box,label="(223317)\ntileSet = this.tilesets.length > 0"];
+n223316 [shape=box,label="<function-end>
+(223316)"];
+n223315 [shape=box,label="<function-begin>
+(223315)\nvar collisionMap = new flixel.tile.FlxTilemap()\nvar tileSet\nvar tileSet\nvar tileSet = this.tilesets != null"];
+n223315 -> n223317[style="dashed",color="gray",label="then"];
+n223315 -> n223318[style="dashed",color="gray",label="else"];
+n223315 -> n223319[style="dashed",color="gray",label="next"];
+n1 [shape=box,label="<root>
+(1)"];
+}

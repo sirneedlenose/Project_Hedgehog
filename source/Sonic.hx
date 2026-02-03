@@ -1,6 +1,9 @@
 package;
 
+import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
+import flixel.util.FlxColor;
+import flixel.util.FlxSpriteUtil;
 
 class Sonic extends Character
 {
@@ -15,8 +18,10 @@ class Sonic extends Character
 
     public function new(posX:Float, posY:Float)
     {
-        super(posX,posY);
-
+        super(posX, posY);
+        trace("Position: (" + posX + ", " + posY + ")");
+        trace("size: " + width + "x" + height);
+    
         var ref= FlxAtlasFrames.fromSparrow("assets/images/sonic.png", "assets/data/sonic.xml");
         frames = ref;
         /*
@@ -61,8 +66,6 @@ class Sonic extends Character
     public override function update(elapsed:Float) 
     {
         super.update(elapsed);
-
-        //var desired:String = null;
 
         // Prioritize vertical inputs first to avoid resets
         if (Controls.DOWN )

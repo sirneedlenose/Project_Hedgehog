@@ -1,16 +1,19 @@
 package;
 
-import flixel.graphics.frames.FlxAtlasFrames;
-import flixel.graphics.atlas.FlxAtlas;
-import flixel.tile.FlxTilemap;
-import flixel.math.FlxPoint;
-import flixel.util.FlxColor;
-import flixel.FlxSprite;
 import flixel.FlxG;
 import flixel.FlxObject;
+import flixel.FlxSprite;
+import flixel.graphics.atlas.FlxAtlas;
+import flixel.graphics.frames.FlxAtlasFrames;
+import flixel.math.FlxPoint;
+import flixel.tile.FlxTilemap;
+import flixel.util.FlxColor;
 
 class Character extends FlxSprite
 {
+	private var spritePosX:Float;
+	private var spritePosY:Float;
+
     public var animPrefixes:Map<String, String>;
     public var animOffsets:Map<String,Array<Dynamic>>;
     public var animSizes:Map<String,Array<Dynamic>>;
@@ -19,10 +22,14 @@ class Character extends FlxSprite
 
     public function new(posX:Float, posY:Float)
     {
+		spritePosX = posX; // Store initial position
+		spritePosY = posY; // Store initial position
+
         animPrefixes = new Map<String, String>();
         animOffsets = new Map<String,Array<Dynamic>>();
         animSizes = new Map<String,Array<Dynamic>>();
         hitBoxes = new Map<String,Array<Dynamic>>();
+        collisionBoxes = new Map<String,Array<Dynamic>>();
 
         super(posX, posY);
     }
@@ -38,12 +45,18 @@ class Character extends FlxSprite
 
             if(animSizes.exists(animation.curAnim.name))
             {
+				// Scale graphic for this animation and update hitbox to keep world position anchored
                 this.setGraphicSize(size[0], size[1]);
+				this.updateHitbox();
+				// Center the graphic within the hitbox so the sprite stays aligned to super.x/super.y
+				this.centerOffsets();
             }
 
             if(animOffsets.exists(animation.curAnim.name))
             {
-                this.offset.set(offset[0], offset[1]);
+				// Apply animation-specific offset as an adjustment relative to the centered offset
+				this.offset.x += offset[0];
+				this.offset.y += offset[1];
             }
         }else{
 

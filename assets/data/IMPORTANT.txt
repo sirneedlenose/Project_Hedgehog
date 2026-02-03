@@ -1,2 +1,7 @@
 HaxeFlixel does not not support infinite tilemaps
 Use a finite tilemap size instead.
+
+Although TiledMap editor creates flags that indicate if tile is flipped horizontally or vertically,
+HaxeFlixel does not support these flags.
+Make sure no tiles are flipped in TiledMap editor.
+Create flipped versions of the tiles instead in your art program.
