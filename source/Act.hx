@@ -1,6 +1,5 @@
 package;
 
-import flixel.tile.FlxTile;
 import flixel.FlxG;
 import flixel.FlxObject;
 import flixel.FlxSprite;
@@ -14,6 +13,7 @@ import flixel.addons.editors.tiled.TiledTileSet;
 import flixel.group.FlxGroup;
 import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.tile.FlxBaseTilemap.FlxTilemapAutoTiling;
+import flixel.tile.FlxTile;
 import flixel.tile.FlxTilemap.GraphicAuto;
 import flixel.tile.FlxTilemap;
 import flixel.util.FlxColor;
@@ -39,11 +39,11 @@ class Act extends TiledMap
         foregroundGroup = new FlxGroup();
         objectGroup = new FlxGroup();
 
-        FlxG.camera.setScrollBoundsRect(0,0,fullWidth,fullHeight);
-
         outOfBounds = new FlxObject(0, fullHeight, fullWidth, 10);
 
         loadObjects(state);
+
+		colliableTilesLayers = new Array<FlxTilemap>();
 
         for(layer in layers)
         {
@@ -96,8 +96,7 @@ class Act extends TiledMap
                 1,
             );
 
-            foregroundGroup.add(tilemap);
-            colliableTilesLayers = new Array<FlxTilemap>();
+			foregroundGroup.add(tilemap);
             colliableTilesLayers.push(tilemap);
         }
 
@@ -156,7 +155,6 @@ class Act extends TiledMap
     private function spawnPlayer(posX:Float, posY:Float, group:FlxGroup, state:PlayState):Void
     {
         var sonic:Sonic = new Sonic(posX, posY);
-        FlxG.camera.follow(sonic,LOCKON,0.15);
         state.sonic = sonic;
         group.add(sonic);
     }

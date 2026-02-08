@@ -80,7 +80,7 @@ class Sonic extends Character
         {
             playAnimation("idle", false, false, 0);
         }
-        
+
         if(name != null && (animation.curAnim == null || animation.curAnim.name != name))
         {
             playAnimation(name, false, false, 0);
@@ -116,8 +116,9 @@ enum PlayerState
 	DOWN;
 }
 
-enum TerrainState
+enum TileType
 {
-	GROUND;
-	AIR;
+	SOLID;
+    FLOOR;
+    CEILING;
 }

@@ -18,6 +18,8 @@ class PlayState extends FlxState
 	private var cameraTarget:FlxSprite;
 	private var debugCamera:FlxCamera;
 
+	private var playerCam:PlayerCam;
+
 	public var sonic:Sonic;
 	public var act:Act;
 
@@ -35,13 +37,14 @@ class PlayState extends FlxState
 		
 		
 		act = new Act("assets/data/act.tmx", this); // Pass the PlayState reference here
+
 		add(act.foregroundGroup);
 		add(act.objectGroup);
 
-		
-		var playerPoint:FlxSprite = new FlxSprite(sonic.x, sonic.y);
-		playerPoint.makeGraphic(10,10, FlxColor.GREEN);
-		add(playerPoint); // Debug point to show player's position
+		playerCam = new PlayerCam(sonic);
+		playerCam.setScrollBoundsRect(0, 0, act.fullWidth, act.fullHeight);
+		sonic.camera = playerCam;
+		FlxG.cameras.add(playerCam);
 
 		debugDisplay = new DebugDisplay(this); // Pass the PlayState reference here
 		add(debugDisplay);
@@ -62,6 +65,7 @@ class PlayState extends FlxState
         else if (Controls.UP && Math.abs(sonic.velocity.x) < 0.1)
         {
             sonic.updateState(UP);
+			
         }
         else if (Controls.LEFT)
         {
@@ -93,5 +97,4 @@ class PlayState extends FlxState
 				debugDisplay.toggleVisibility();
 			}
 	}
-	
 }
