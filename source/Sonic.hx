@@ -2,25 +2,24 @@ package;
 
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
+import flixel.tile.FlxTile;
+import flixel.tile.FlxTilemap;
 import flixel.util.FlxColor;
 import flixel.util.FlxSpriteUtil;
 
 class Sonic extends Character
 {
-    public var state:CharacterState;
+	public var state:PlayerState;
     public var terrainState:TerrainState;
-
-    public var velocityX:Float = 0;
-    public var velocityY:Float = 0;
-
-    private var animName:String;
-
 
     public function new(posX:Float, posY:Float)
     {
         super(posX, posY);
-        trace("Position: (" + posX + ", " + posY + ")");
-        trace("size: " + width + "x" + height);
+		maxVelocity.x = 250;
+		maxVelocity.y = 500;
+		acceleration.y = 700;
+
+		drag.x = maxVelocity.x * 2;
     
         var ref= FlxAtlasFrames.fromSparrow("assets/images/sonic.png", "assets/data/sonic.xml");
         frames = ref;
@@ -36,77 +35,59 @@ class Sonic extends Character
         animation.addByPrefix("spindash","spindash",24,true,false);
         animation.addByPrefix("up","up",24,false,false);
         */
+
         addPrefix("idle","idle",24,true,false);
         addPrefix("jog","jog",24,true,false);
         addPrefix("up","up",24,false,false);
         addPrefix("down","down",24,false,false);
         // ensure we only register animations once
 
-        antialiasing = true; // Enable antialiasing for smoother graphics
-
-        addOffset("idle", -10, -5);
+        addOffset("idle", -5, -5);
         addSize("idle", 124, 144);
+		addHitbox("idle", 124, 144);
         
-        addOffset("jog", -12, -4);
-        addSize("jog", 128, 144);
+		addOffset("jog", 0, -4);
+		addSize("jog", 135, 144);
+		addHitbox("jog", 124, 144);
 
-        addOffset("up", -10, -5);
-        addSize("up", 124, 150);
+		addOffset("up", -10, 5);
+        addSize("up", 130, 150);
+		addHitbox("up", 124, 144);
 
         addOffset("down", -10, -5);
         addSize("down", 124, 144);
+		addHitbox("down", 124, 144);
 
-        state = IDLE;
-        
-        playAnimation("idle", true, false, 0);
+        updateState(IDLE);
 
+        playAnim("idle");
 
     }
 
     public override function update(elapsed:Float) 
     {
-        super.update(elapsed);
-
-        // Prioritize vertical inputs first to avoid resets
-        if (Controls.DOWN )
+		if (animation.curAnim.name == "jog")
         {
-            //desired = "down";
-            animName = "down";
-            updateState(DOWN);
-        }
-        else if (Controls.UP)
-        {
-            //desired = "up";
-            animName = "up";
-            updateState(UP);
-        }
-        else if (Controls.LEFT)
-        {
-            flipX = true;
-            animName = "jog";
-            updateState(RUNNING);
-        }
-        else if (Controls.RIGHT)
-        {
-            flipX = false;
-            animName = "jog";
-            updateState(RUNNING);
-        }
-        else
-        {
-            animName = "idle";
-            updateState(IDLE);
+			animation.curAnim.frameRate = 10 + velocity.length / 20;
         }
 
-        // Only switch animations when the desired one changes
-        if (animName != null && (animation.curAnim == null || animation.curAnim.name != animName))
-        {
-            playAnimation(animName, false, false, 0);
-        }
+		super.update(elapsed);
+	}
 
+	public function playAnim(?name:String):Void
+	{
+        if(name == null)
+        {
+            playAnimation("idle", false, false, 0);
+        }
+        
+        if(name != null && (animation.curAnim == null || animation.curAnim.name != name))
+        {
+            playAnimation(name, false, false, 0);
+        }
     }
 
-    public function updateState(newState:CharacterState):Void
+	public function updateState(newState:PlayerState):Void
     {
         if(state == newState){ 
             return;
@@ -115,13 +96,28 @@ class Sonic extends Character
         state = newState;
     }
 
-    public function getState():CharacterState
+	public function getState():PlayerState
     {
         return state;
     }
 
     public function playerStateToString():String
     {
-        return state.getName();
+		return Std.string(state).toLowerCase();
     }
+}
+
+enum PlayerState
+{
+	IDLE;
+	JOG;
+	RUNNING;
+	UP;
+	DOWN;
+}
+
+enum TerrainState
+{
+	GROUND;
+	AIR;
 }

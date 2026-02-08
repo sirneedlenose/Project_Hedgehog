@@ -88,5 +88,6 @@
 	<!-- _________________________________ Custom _______________________________ -->
 
 	<!--Place custom nodes like icons here-->
-	<haxeflag name="-D DEBUG" />
+	<define name="DDISPLAY" />
+
 </project>

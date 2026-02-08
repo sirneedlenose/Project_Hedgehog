@@ -1,0 +1,5 @@
+Pos X
+Pos Y
+Speed
+Acceleration
+State

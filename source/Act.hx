@@ -1,25 +1,26 @@
 package;
 
-import flixel.util.FlxDirection;
+import flixel.tile.FlxTile;
+import flixel.FlxG;
 import flixel.FlxObject;
-import flixel.addons.editors.tiled.TiledObject;
+import flixel.FlxSprite;
 import flixel.FlxState;
-import flixel.addons.editors.tiled.TiledTileSet;
+import flixel.addons.editors.tiled.TiledLayer.TiledLayerType;
+import flixel.addons.editors.tiled.TiledMap;
+import flixel.addons.editors.tiled.TiledObject;
 import flixel.addons.editors.tiled.TiledObjectLayer;
 import flixel.addons.editors.tiled.TiledTileLayer;
-import flixel.addons.editors.tiled.TiledLayer.TiledLayerType;
+import flixel.addons.editors.tiled.TiledTileSet;
 import flixel.group.FlxGroup;
-import flixel.addons.editors.tiled.TiledMap;
-import flixel.tile.FlxBaseTilemap.FlxTilemapAutoTiling;
-import flixel.FlxG;
-import flixel.FlxSprite;
 import flixel.system.FlxAssets.FlxGraphicAsset;
-import flixel.tile.FlxTilemap;
+import flixel.tile.FlxBaseTilemap.FlxTilemapAutoTiling;
 import flixel.tile.FlxTilemap.GraphicAuto;
+import flixel.tile.FlxTilemap;
 import flixel.util.FlxColor;
+import flixel.util.FlxDirection;
+import flixel.util.FlxDirectionFlags;
 import flixel.util.FlxGradient;
 import openfl.display.BitmapData;
-import flixel.util.FlxDirectionFlags;
 
 using StringTools;
 
@@ -27,6 +28,7 @@ class Act extends TiledMap
 {
     public var foregroundGroup:FlxGroup;
     public var objectGroup:FlxGroup;
+    public var outOfBounds:FlxObject;
 
     var colliableTilesLayers:Array<FlxTilemap>;
 
@@ -38,6 +40,8 @@ class Act extends TiledMap
         objectGroup = new FlxGroup();
 
         FlxG.camera.setScrollBoundsRect(0,0,fullWidth,fullHeight);
+
+        outOfBounds = new FlxObject(0, fullHeight, fullWidth, 10);
 
         loadObjects(state);
 
@@ -77,15 +81,13 @@ class Act extends TiledMap
                 throw "Tileset '" + tileSheetName + "' not found. Did you misspell the 'tilesheet' property in '" + tileLayer.name + "' layer?";
             }
 
-            var imagePath:String = tileSet.imageSource;
-            trace("Loading tileset image: " + imagePath);
-
             var tilemap:FlxTilemap = new FlxTilemap();
+			// Load with the actual tileset image path from Tiled
             tilemap.loadMapFromArray(
                 tileLayer.tileArray,
                 width,
                 height,
-                "assets/images/testTiles.png", // TODO: Replace with imagePath variable when asset management is set up
+			    "assets/images/testTiles.png",
                 tileSet.tileWidth,
                 tileSet.tileHeight,
                 OFF,
@@ -94,11 +96,9 @@ class Act extends TiledMap
                 1,
             );
 
-            correctTiles(tilemap, tileLayer, tileSet);
-
-
-
             foregroundGroup.add(tilemap);
+            colliableTilesLayers = new Array<FlxTilemap>();
+            colliableTilesLayers.push(tilemap);
         }
 
     }
@@ -140,35 +140,43 @@ class Act extends TiledMap
             case "player_spawn":
                 trace("Spawning player at (" + posX + ", " + posY + ")");
                 spawnPlayer(posX, posY, group, state);
+
+            case "fall_zone":
+                var fallZone = new FlxObject(posX, posY, obj.width, obj.height);
+                /*
+                var debug:FlxSprite = new FlxSprite(posX, posY);
+                debug.makeGraphic(obj.width, obj.height, FlxColor.RED);
+                group.add(debug);
+                */
+                state.deathZone = fallZone;
+                //group.add(fallZone);
         }
     }
 
     private function spawnPlayer(posX:Float, posY:Float, group:FlxGroup, state:PlayState):Void
     {
         var sonic:Sonic = new Sonic(posX, posY);
+        FlxG.camera.follow(sonic,LOCKON,0.15);
         state.sonic = sonic;
         group.add(sonic);
     }
 
-    private function correctTiles(tilemap:FlxTilemap, tileLayer:TiledTileLayer, tileSet:TiledTileSet):Void
+    public function collidewithLevel(obj:FlxObject,?notifyCallBack:FlxObject->FlxObject->Void,
+    ?processCallBack:FlxObject->FlxObject->Bool):Bool
     {
-        for(y in 0...tileLayer.height)
+        if(colliableTilesLayers == null)
         {
-            for(x in 0...tileLayer.width)
-            {
-                var index:Int = y * tileLayer.width + x;
-                var gid:Int = tileLayer.tileArray[index];
-
-                if(gid == 0)
-                {
-                    continue;
-                }
-
-                var localId:Int = gid - tileSet.firstGID;
-
-                
-            }
+            return false;
         }
 
+        for(map in colliableTilesLayers)
+        {
+            if(FlxG.overlap(obj, map, notifyCallBack, processCallBack != null ? processCallBack : FlxObject.separate))
+            {
+                return true;
+            }
+        }
+        return false;
     }
+
 }

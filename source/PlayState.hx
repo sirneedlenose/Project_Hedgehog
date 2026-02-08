@@ -2,84 +2,96 @@ package;
 
 import flixel.FlxBasic;
 import flixel.FlxCamera;
-import flixel.util.FlxSpriteUtil;
-import flixel.addons.editors.tiled.TiledObjectLayer;
-import flixel.text.FlxText;
 import flixel.FlxG;
-import flixel.FlxState;
-import flixel.util.FlxColor;
+import flixel.FlxObject;
 import flixel.FlxSprite;
+import flixel.FlxState;
+import flixel.addons.editors.tiled.TiledObjectLayer;
+import flixel.group.FlxGroup;
+import flixel.text.FlxText;
+import flixel.tile.FlxTilemap;
+import flixel.util.FlxColor;
+import flixel.util.FlxSpriteUtil;
 
 class PlayState extends FlxState
 {
 	private var cameraTarget:FlxSprite;
 	private var debugCamera:FlxCamera;
+
 	public var sonic:Sonic;
-	private var debugDisplay:DebugDisplay;
 	public var act:Act;
+
+	public var deathZone:FlxObject;
+	private var debugDisplay:DebugDisplay;
 
 	private var playerState:String;
 
+	private var tilemap:FlxTilemap;
+	private var heightMaps:Array<Array<Int>>;
+
 	public override function create():Void
 	{
-		
 		bgColor = FlxColor.GRAY;
-
-		cameraTarget = new FlxSprite(0, 0);
-		cameraTarget.makeGraphic(20,20,FlxColor.RED);
-		add(cameraTarget);
-
-		FlxG.camera.follow(cameraTarget);
-
-		debugDisplay = new DebugDisplay();
-		//add(debugDisplay);
-
+		
+		
 		act = new Act("assets/data/act.tmx", this); // Pass the PlayState reference here
 		add(act.foregroundGroup);
 		add(act.objectGroup);
-		
-		//add(sonic);
 
+		
 		var playerPoint:FlxSprite = new FlxSprite(sonic.x, sonic.y);
 		playerPoint.makeGraphic(10,10, FlxColor.GREEN);
 		add(playerPoint); // Debug point to show player's position
+
+		debugDisplay = new DebugDisplay(this); // Pass the PlayState reference here
+		add(debugDisplay);
+		
 	}
 
 	public override function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
 
-		if(Controls.TAB)
+		sonic.acceleration.x = 0;
+
+		if (Controls.DOWN && Math.abs(sonic.velocity.x) < 0.1 )
+        {
+            sonic.updateState(DOWN);
+
+        }
+        else if (Controls.UP && Math.abs(sonic.velocity.x) < 0.1)
+        {
+            sonic.updateState(UP);
+        }
+        else if (Controls.LEFT)
+        {
+            sonic.flipX = true;
+			sonic.acceleration.x = -sonic.maxVelocity.x;
+
+            sonic.updateState(JOG);
+        }
+		else if (Controls.RIGHT)
 		{
-			//displayDebugInfo();
+			sonic.flipX = false;
+			sonic.acceleration.x = sonic.maxVelocity.x;
+
+			sonic.updateState(JOG);
+		}
+		else if (Math.abs(sonic.velocity.x) < 0.1)
+		{
+			sonic.updateState(IDLE);
 		}
 
-		if(Controls.LEFT)
-		{
-			cameraTarget.x -= 20;
+		sonic.playAnim(sonic.playerStateToString());
 
-		}
+		act.collidewithLevel(sonic);
 
-		if(Controls.RIGHT)
-		{
-			cameraTarget.x += 20;
+		debugDisplay.updateALL();
 
-		}
-
-		if(Controls.UP)
-		{
-			cameraTarget.y -= 20;
-
-		}
-		if(Controls.DOWN)
-		{
-			cameraTarget.y += 20;
-
-		}
-		if(Controls.ACTION_1)
-		{
-			trace("Camera Target Position: (" + cameraTarget.x + ", " + cameraTarget.y + ")");
-
-		}
+			if(Controls.TAB)
+			{
+				debugDisplay.toggleVisibility();
+			}
 	}
+	
 }

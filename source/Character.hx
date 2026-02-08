@@ -6,30 +6,35 @@ import flixel.FlxSprite;
 import flixel.graphics.atlas.FlxAtlas;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.math.FlxPoint;
+import flixel.tile.FlxTile;
 import flixel.tile.FlxTilemap;
+import flixel.util.FlxCollision;
 import flixel.util.FlxColor;
 
-class Character extends FlxSprite
+abstract class Character extends FlxSprite
 {
-	private var spritePosX:Float;
-	private var spritePosY:Float;
-
     public var animPrefixes:Map<String, String>;
     public var animOffsets:Map<String,Array<Dynamic>>;
     public var animSizes:Map<String,Array<Dynamic>>;
-    public var collisionBoxes:Map<String,Array<Dynamic>>; // not fully implemented yet
     public var hitBoxes:Map<String,Array<Dynamic>>; // not fully implemented yet
 
+	public var allowFrameRateChange:Bool = true;
+
+	public static var allowAntialiasing:Bool = true;
+
     public function new(posX:Float, posY:Float)
-    {
-		spritePosX = posX; // Store initial position
-		spritePosY = posY; // Store initial position
+	{
 
         animPrefixes = new Map<String, String>();
         animOffsets = new Map<String,Array<Dynamic>>();
         animSizes = new Map<String,Array<Dynamic>>();
         hitBoxes = new Map<String,Array<Dynamic>>();
-        collisionBoxes = new Map<String,Array<Dynamic>>();
+
+		solid = true;
+
+		allowFrameRateChange = (allowFrameRateChange) ? true : false;
+		antialiasing = (allowAntialiasing) ? true : false;
+
 
         super(posX, posY);
     }
@@ -48,8 +53,16 @@ class Character extends FlxSprite
 				// Scale graphic for this animation and update hitbox to keep world position anchored
                 this.setGraphicSize(size[0], size[1]);
 				this.updateHitbox();
+
 				// Center the graphic within the hitbox so the sprite stays aligned to super.x/super.y
 				this.centerOffsets();
+
+				// If a hitbox is defined for this animation, enforce it to keep collisions stable
+				if (hitBoxes.exists(animation.curAnim.name))
+				{
+					var hb = hitBoxes.get(animation.curAnim.name);
+                    this.setSize(hb[0], hb[1]);
+				}
             }
 
             if(animOffsets.exists(animation.curAnim.name))
@@ -83,11 +96,5 @@ class Character extends FlxSprite
     public function addHitbox(animName:String, width:Float, height:Float, offsetX:Float = 0, offsetY:Float = 0):Void
     {
         hitBoxes[animName] = [width, height, offsetX, offsetY];
-    }
-
-
-    public function createHitBox(animName:String):Void
-    {
-        //TODO: Implement hitbox changing based on animation
     }
 }
