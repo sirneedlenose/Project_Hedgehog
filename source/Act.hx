@@ -1,9 +1,6 @@
 package;
 
-import flixel.FlxG;
-import flixel.FlxObject;
-import flixel.FlxSprite;
-import flixel.FlxState;
+import flixel.addons.editors.tiled.TiledGroupLayer;
 import flixel.addons.editors.tiled.TiledLayer.TiledLayerType;
 import flixel.addons.editors.tiled.TiledMap;
 import flixel.addons.editors.tiled.TiledObject;
@@ -11,170 +8,209 @@ import flixel.addons.editors.tiled.TiledObjectLayer;
 import flixel.addons.editors.tiled.TiledTileLayer;
 import flixel.addons.editors.tiled.TiledTileSet;
 import flixel.group.FlxGroup;
-import flixel.system.FlxAssets.FlxGraphicAsset;
-import flixel.tile.FlxBaseTilemap.FlxTilemapAutoTiling;
-import flixel.tile.FlxTile;
-import flixel.tile.FlxTilemap.GraphicAuto;
-import flixel.tile.FlxTilemap;
-import flixel.util.FlxColor;
-import flixel.util.FlxDirection;
-import flixel.util.FlxDirectionFlags;
-import flixel.util.FlxGradient;
-import openfl.display.BitmapData;
 
 using StringTools;
 
-class Act extends TiledMap
+// THE HEART
+
+enum ActTileType
 {
-    public var foregroundGroup:FlxGroup;
-    public var objectGroup:FlxGroup;
-    public var outOfBounds:FlxObject;
+    SOLID;
+    TOP;
+    SIDE_BOTTOM;
+}
 
-    var colliableTilesLayers:Array<FlxTilemap>;
+typedef ActTileData = {
 
-    public function new(tiledAct:FlxTiledMapAsset, state:PlayState)
+    var tileType:ActTileType;
+
+    var tileWidth:Int; // ignores the image size just bitmap data
+    var tileHeight:Int; // ignore the image size just bitmap data
+
+    var tileMaxHeight:Int; // the max height of the tile, used for slopes to determine how high the tile can be at a certain point
+
+    var tileAngle:Float;
+}
+
+class Act extends TiledMap 
+{
+    public static var path:String = "act";
+    public static var actTileSize:Int = 48;
+
+    private var foregroundGroup:FlxGroup;
+    private var solidTileGroup:FlxGroup;
+    private var collisionGroup:FlxGroup;
+    private var objectGroup:FlxGroup;
+
+    public function new()
     {
-        super(tiledAct);
+        super('assets/data/$path.tmx');
 
-        foregroundGroup = new FlxGroup();
-        objectGroup = new FlxGroup();
+        loadObjects();
+        loadCollisionMap();
 
-        outOfBounds = new FlxObject(0, fullHeight, fullWidth, 10);
+    }
 
-        loadObjects(state);
-
-		colliableTilesLayers = new Array<FlxTilemap>();
-
-        for(layer in layers)
+    private function loadObjects():Void
+    {
+        for(daLayer in layers)
         {
-            if(layer.type != TiledLayerType.TILE)
+            if(daLayer.type != TiledLayerType.OBJECT)
             {
                 continue;
             }
 
-            var tileLayer:TiledTileLayer = cast(layer);
-            var tileSheetName:String = tileLayer.properties.get("tileset");
-            trace("Loading tileset: " + tileSheetName);
+            var objectLayer:TiledObjectLayer = cast daLayer;
 
-            if(tileSheetName == null)
+            switch(objectLayer.name.toLowerCase())
             {
-                throw "'tileset' property not defined for the '" + tileLayer.name + "' layer. Please add the property to the layer.";
+                case "objects":
+                    for(daObj in objectLayer.objects)
+                    {
+                        loadObject(daObj, objectLayer);
+                    }
             }
-
-            var tileSet:TiledTileSet = null;
-
-            trace("Available tilesets:");
-
-            for(ts in tilesets)
-            {
-                trace("-" + ts.name);
-
-                if(ts.name == tileSheetName)
-                {
-                    tileSet = ts;
-                    break;
-                }
-            }
-
-            if(tileSet == null)
-            {
-                throw "Tileset '" + tileSheetName + "' not found. Did you misspell the 'tilesheet' property in '" + tileLayer.name + "' layer?";
-            }
-
-            var tilemap:FlxTilemap = new FlxTilemap();
-			// Load with the actual tileset image path from Tiled
-            tilemap.loadMapFromArray(
-                tileLayer.tileArray,
-                width,
-                height,
-			    "assets/images/testTiles.png",
-                tileSet.tileWidth,
-                tileSet.tileHeight,
-                OFF,
-                tileSet.firstGID,
-                1,
-                1,
-            );
-
-			foregroundGroup.add(tilemap);
-            colliableTilesLayers.push(tilemap);
-        }
-
-    }
-
-    private function loadObjects(state:PlayState):Void
-    {
-        for(layer in layers)
-        {
-            if(layer.type != TiledLayerType.OBJECT)
-            {
-                continue;
-            }
-
-            var objectLayer:TiledObjectLayer = cast(layer);
-
-            if(layer.name.toLowerCase() == "objects")
-            {
-                for(object in objectLayer.objects)
-                {
-                    loadObject(object, objectLayer, objectGroup, state);
-                }
-            }
-
         }
     }
 
-    private function loadObject(obj:TiledObject, layer:TiledObjectLayer, group:FlxGroup, state:PlayState):Void
+    private function loadObject(daObj:TiledObject, daLayer:TiledObjectLayer):Void
     {
-        var posX:Float = obj.x;
-        var posY:Float = obj.y;
-        if(obj.gid != -1)
+        var PosX = daObj.x;
+        var PosY = daObj.y;
+
+        if(daObj.gid != -1)
         {
-            posY -= layer.map.getGidOwner(obj.gid).tileHeight;
+            PosY -= daLayer.map.getGidOwner(daObj.gid).tileHeight; // Tiled's y coordinate is the bottom of the tile, so we need to adjust it to be the top of the tile
         }
-        trace("Loading object of type '" + obj.type + "' at (" + posX + ", " + posY + ")");
-        trace("GID: " + obj.gid);
-        switch(obj.type.toLowerCase())
+
+        switch(daObj.type.toLowerCase())
         {
             case "player_spawn":
-                trace("Spawning player at (" + posX + ", " + posY + ")");
-                spawnPlayer(posX, posY, group, state);
+                PlayState.setPlayerCoord(PosX, PosY);
+            default:
+                throw 'Unknown object type: ${daObj.type}';
 
-            case "fall_zone":
-                var fallZone = new FlxObject(posX, posY, obj.width, obj.height);
-                /*
-                var debug:FlxSprite = new FlxSprite(posX, posY);
-                debug.makeGraphic(obj.width, obj.height, FlxColor.RED);
-                group.add(debug);
-                */
-                state.deathZone = fallZone;
-                //group.add(fallZone);
         }
     }
 
-    private function spawnPlayer(posX:Float, posY:Float, group:FlxGroup, state:PlayState):Void
+    private function loadCollisionMap():Void
     {
-        var sonic:Sonic = new Sonic(posX, posY);
-        state.sonic = sonic;
-        group.add(sonic);
-    }
-
-    public function collidewithLevel(obj:FlxObject,?notifyCallBack:FlxObject->FlxObject->Void,
-    ?processCallBack:FlxObject->FlxObject->Bool):Bool
-    {
-        if(colliableTilesLayers == null)
+        for(daLayer in layers)
         {
-            return false;
-        }
-
-        for(map in colliableTilesLayers)
-        {
-            if(FlxG.overlap(obj, map, notifyCallBack, processCallBack != null ? processCallBack : FlxObject.separate))
+            if(daLayer.type != TiledLayerType.GROUP)
             {
-                return true;
+                continue;
+            }
+
+            var groupLayer:TiledGroupLayer = cast daLayer;
+
+            for(subLayer in groupLayer.layers)
+            {
+                if(subLayer.type != TiledLayerType.TILE)
+                {
+                    continue;
+                }
+
+                var tileLayer:TiledTileLayer = cast subLayer;
+
+                try
+                {
+                    switch(tileLayer.name.toLowerCase())
+                    {
+                        case "solidlayer":
+                            createSolidLayer(tileLayer);
+                            break;
+                            
+                        case "toplayer":
+                            createTopLayer(tileLayer);
+                            break;
+
+                        case "sidebottomlayer":
+                            createSideBottomLayer(tileLayer);
+                            break;
+
+                        default:
+                            throw 'Unknown layer name: ${tileLayer.name}'; 
+                    }
+
+                }
+                catch(msg:Dynamic)
+                {
+                    trace("Error loading collision map: " + msg);
+                }
             }
         }
-        return false;
     }
 
+    private function createSolidLayer(daLayer:TiledTileLayer):Void
+    {
+        var solidTileSet:TiledTileSet = getTileSet(daLayer.properties.get("tileset"));
+
+        if(solidTileSet == null)
+        {
+            throw 'Tileset not found: ${daLayer.properties.get("tileset")}';
+        }
+
+        var daImageSource = solidTileSet.imageSource;
+
+        var widthInTiles = daLayer.width;
+        var heightInTiles = daLayer.height;
+
+        try{
+            //var daCollisionMap = new CollisionMap(SOLID, daLayer.tileArray, daImageSource, widthInTiles, heightInTiles, actTileSize);
+        }
+        catch(msg:Dynamic)
+        {
+            trace("Error creating collision map: " + msg);
+        }
+
+    }
+
+    private function createTopLayer(daLayer:TiledTileLayer):Void
+    {
+        var topTileSet:TiledTileSet = getTileSet(daLayer.properties.get("tileset"));
+
+        if(topTileSet == null)
+        {
+            throw 'Tileset not found: ${daLayer.properties.get("tileset")}';
+        }
+
+        var daImageSource = topTileSet.imageSource;
+        
+        var widthInTiles = daLayer.width;
+        var heightInTiles = daLayer.height;
+
+        try{
+           // var daCollisionMap = new CollisionMap(SOLID, daLayer.tileArray, daImageSource, widthInTiles, heightInTiles, actTileSize);
+        }
+        catch(msg:Dynamic)
+        {
+            trace("Error creating collision map: " + msg);
+        }
+
+
+    }
+
+    private function createSideBottomLayer(daLayer:TiledTileLayer):Void
+    {
+        var sideBottomTileSet:TiledTileSet = getTileSet(daLayer.properties.get("tileset"));
+
+        if(sideBottomTileSet == null)
+        {
+            throw 'Tileset not found: ${daLayer.properties.get("tileset")}';
+        }
+
+        var daImageSource = sideBottomTileSet.imageSource;
+
+        var widthInTiles = daLayer.width;
+        var heightInTiles = daLayer.height;
+
+        try{
+            //var daCollisionMap = new CollisionMap(SOLID, daLayer.tileArray, daImageSource, widthInTiles, heightInTiles, actTileSize);
+        }
+        catch(msg:Dynamic)
+        {
+            trace("Error creating collision map: " + msg);
+        }
+    }
 }

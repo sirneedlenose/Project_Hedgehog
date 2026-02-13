@@ -1,5 +1,0 @@
-enum TerrainState
-{
-    GROUND;
-    AIR;
-}

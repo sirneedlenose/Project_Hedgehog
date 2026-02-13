@@ -15,16 +15,14 @@ import flixel.util.FlxSpriteUtil;
 
 class PlayState extends FlxState
 {
+	private static var playerSpawnCoor:Array<Float>;
+
 	private var cameraTarget:FlxSprite;
 	private var debugCamera:FlxCamera;
-
-	private var playerCam:PlayerCam;
+	private var playerCamera:FlxCamera;
 
 	public var sonic:Sonic;
 	public var act:Act;
-
-	public var deathZone:FlxObject;
-	private var debugDisplay:DebugDisplay;
 
 	private var playerState:String;
 
@@ -34,21 +32,21 @@ class PlayState extends FlxState
 	public override function create():Void
 	{
 		bgColor = FlxColor.GRAY;
-		
-		
-		act = new Act("assets/data/act.tmx", this); // Pass the PlayState reference here
 
-		add(act.foregroundGroup);
-		add(act.objectGroup);
+		playerCamera = new FlxCamera();
+		debugCamera = new FlxCamera();
 
-		playerCam = new PlayerCam(sonic);
-		playerCam.setScrollBoundsRect(0, 0, act.fullWidth, act.fullHeight);
-		sonic.camera = playerCam;
-		FlxG.cameras.add(playerCam);
+		FlxG.cameras.add(playerCamera);
+		FlxG.cameras.add(debugCamera);
 
-		debugDisplay = new DebugDisplay(this); // Pass the PlayState reference here
-		add(debugDisplay);
-		
+		act = new Act();
+
+		sonic = spawnPlayer();
+
+		playerCamera.follow(sonic, LOCKON, 0.15);
+		sonic.cameras = [playerCamera];
+		add(sonic);
+			
 	}
 
 	public override function update(elapsed:Float):Void
@@ -87,14 +85,20 @@ class PlayState extends FlxState
 		}
 
 		sonic.playAnim(sonic.playerStateToString());
+	}
 
-		act.collidewithLevel(sonic);
+	public static function setPlayerCoord(posX:Float, posY:Float):Void
+	{
+		playerSpawnCoor = [posX, posY];
+	}
 
-		debugDisplay.updateALL();
+	private function spawnPlayer():Sonic
+	{
+		sonic = new Sonic();
 
-			if(Controls.TAB)
-			{
-				debugDisplay.toggleVisibility();
-			}
+		sonic.x = playerSpawnCoor[0];
+		sonic.y = playerSpawnCoor[1] - sonic.graphic.height; // Adjust for sprite height
+
+		return sonic;
 	}
 }

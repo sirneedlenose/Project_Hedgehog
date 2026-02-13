@@ -1,25 +1,51 @@
 package;
 
-import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
-import flixel.tile.FlxTile;
-import flixel.tile.FlxTilemap;
-import flixel.util.FlxColor;
-import flixel.util.FlxSpriteUtil;
+
+enum PlayerState
+{
+	IDLE;
+	JOG;
+	UP;
+	DOWN;
+	JUMP;
+	BALL;
+	SPINDASH;
+}
+
+enum PlayerTileState
+{
+	SOLID;
+	FLOOR;
+	CEILING;
+}
 
 class Sonic extends Character
 {
-	public var state:PlayerState;
-    public var terrainState:TerrainState;
+	
+	private var state:PlayerState;
 
-    public function new(posX:Float, posY:Float)
+	public var isGrounded:Bool;
+
+	/** Current ground angle in radians */
+	public var groundAngle:Float;
+
+
+	public function new(posX:Float = 0, posY:Float = 0)
     {
         super(posX, posY);
+
+		#if !PLAYERDEBUG
 		maxVelocity.x = 250;
 		maxVelocity.y = 500;
 		acceleration.y = 700;
 
 		drag.x = maxVelocity.x * 2;
+		#end
+
+		// Initialize ground state
+		isGrounded = false;
+		groundAngle = 0;
     
         var ref= FlxAtlasFrames.fromSparrow("assets/images/sonic.png", "assets/data/sonic.xml");
         frames = ref;
@@ -58,11 +84,10 @@ class Sonic extends Character
         addSize("down", 124, 144);
 		addHitbox("down", 124, 144);
 
-        updateState(IDLE);
+		updateState(IDLE);
 
-        playAnim("idle");
-
-    }
+		playAnim("idle");
+	}
 
     public override function update(elapsed:Float) 
     {
@@ -70,6 +95,8 @@ class Sonic extends Character
         {
 			animation.curAnim.frameRate = 10 + velocity.length / 20;
         }
+
+		playAnim(playerStateToString());
 
 		super.update(elapsed);
 	}
@@ -92,33 +119,16 @@ class Sonic extends Character
         if(state == newState){ 
             return;
         }
-
         state = newState;
-    }
-
-	public function getState():PlayerState
-    {
-        return state;
     }
 
     public function playerStateToString():String
     {
 		return Std.string(state).toLowerCase();
     }
-}
 
-enum PlayerState
-{
-	IDLE;
-	JOG;
-	RUNNING;
-	UP;
-	DOWN;
-}
-
-enum TileType
-{
-	SOLID;
-    FLOOR;
-    CEILING;
+	public function getPlayerState():PlayerState
+	{
+		return state;
+	}
 }
